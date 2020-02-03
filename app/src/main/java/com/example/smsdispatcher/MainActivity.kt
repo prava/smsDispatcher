@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.github.kittinunf.fuel.Fuel
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -29,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
 
 
         smsListenerSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
@@ -59,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setUrlButton.setOnClickListener {
-            Toast.makeText(this, "click", Toast.LENGTH_LONG)
+            //Toast.makeText(this, "click", Toast.LENGTH_LONG)
             setUrl();
         }
 
@@ -93,31 +96,61 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(permitionTyoe), PermitionCode)
     }
 
-    private fun showMesage(ttl: String, txt: String, callback: (() -> Unit?)?) {
-        AlertDialog.Builder(this).setTitle(ttl).setMessage(txt).setPositiveButton("OK"){ dialog, which -> if(callback != null) callback();} .create().show();
+    private fun showMesage(title: String, msg: String, callback_OK: (() -> Unit?)?) {
+        AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK"){ dialog, which -> if(callback_OK != null) callback_OK();} .create().show();
+    }
+
+    private fun showMesage1(title: String, msg: String) {
+        return AlertDialog.Builder(this).setTitle(title).setMessage(msg).create().show();
     }
 
     private fun setUrl() {
+
         if(urlEditText.text.isEmpty()) {
-            //showMesage("Error", "Enter dispatch URL")
+            showMesage("Error", "Enter dispatch URL", null)
         }
         else
         {
-            urlText.text = urlEditText.text
+            //urlText.text = urlEditText.text
             setUrlButton.visibility = View.INVISIBLE
             urlEditText.visibility = View.INVISIBLE
             urlText.visibility = View.VISIBLE
 
+
+
+
+            val result = Fuel.get("https://api.ipify.org?format=json").responseString(){ request, response, result ->
+                //val res = result.get()
+                return@responseString
+            }
+
+
+
+            while(!result.isDone){
+                Log.i(TAG, "Sleep")
+                Thread.sleep(1000);
+
+            }
+            val respData = String( result.get().data);
+            //Log.i(TAG, String( result.get().data))
+            if(respData != "Success")
+                Toast.makeText(applicationContext,"URL test failed: " + respData,Toast.LENGTH_SHORT).show()
+
+            urlText.text = urlEditText.text;
+            //showMesage1("ERROR", String( result.get().data));
+
+
         }
     }
 
+
+
     private fun editUrl()
     {
+        Log.i(TAG, "editUrl")
         urlEditText.setText(urlText.text)
         urlEditText.visibility = View.VISIBLE
         setUrlButton.visibility = View.VISIBLE
         urlText.visibility = View.INVISIBLE
     }
-
 }
-
