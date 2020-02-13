@@ -2,6 +2,7 @@ package com.example.smsdispatcher
 
 import android.Manifest
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -31,10 +32,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        //makeRequest(Manifest.permission.RECEIVE_SMS, SMS_RECAVE_PERMISSION_CODE)
 
-
-
-        smsListenerSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+// region SWITCHS
+        smsListenerSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 Log.i(TAG,"smsListenerSwitch Switch on");
             } else {
@@ -42,7 +43,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        smsDeliverySwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        smsDeliverySwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 if(!smsListenerSwitch.isChecked) {
                     smsListenerSwitch.isChecked = true;
@@ -53,24 +54,53 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        smsDispatcherSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        smsDispatcherSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 Log.i(TAG,"smsDispatcherSwitch Switch on");
             } else {
                 Log.i(TAG,"smsDispatcherSwitch Switch off");
             }
         }
-
+// endregion
         setUrlButton.setOnClickListener {
+
+
+/*
+            repeat(10) { i ->
+                println("job: I'm sleeping $i ...")
+                Thread.sleep(1000);
+            }
+
+ */
+
             //Toast.makeText(this, "click", Toast.LENGTH_LONG)
             setUrl();
+        }
+
+        testUrlButton.setOnClickListener {
+
+            if(urlEditText.text.isEmpty()) {
+                showMesage("Error", "Enter dispatch URL", null)
+                return@setOnClickListener
+            }
+            Run.after(10, {
+                if(false) {
+                    println("false")
+                } else {
+                    testUrl();
+                }
+            })
+
+
+
+
         }
 
         urlText.setOnClickListener {
             editUrl();
         }
 
-        urlEditText.setOnKeyListener(View.OnKeyListener { v, keyCode, event ->
+        urlEditText.setOnKeyListener(View.OnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP) {
                 setUrl();
                 return@OnKeyListener true
@@ -79,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         })
 
     }
-
+// region SET/CHECK PERMITIONS
     private  fun setupPermissions() {
         makeRequest(Manifest.permission.INTERNET, INTERNET_PERMISSION_CODE)
         makeRequest(Manifest.permission.READ_SMS, SMS_READ_PERMISSION_CODE)
@@ -95,13 +125,11 @@ class MainActivity : AppCompatActivity() {
     private fun makeRequest(permitionTyoe: String, PermitionCode: Int) {
         ActivityCompat.requestPermissions(this, arrayOf(permitionTyoe), PermitionCode)
     }
+//endregion
+
 
     private fun showMesage(title: String, msg: String, callback_OK: (() -> Unit?)?) {
-        AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK"){ dialog, which -> if(callback_OK != null) callback_OK();} .create().show();
-    }
-
-    private fun showMesage1(title: String, msg: String) {
-        return AlertDialog.Builder(this).setTitle(title).setMessage(msg).create().show();
+        AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK"){ _, _ -> if(callback_OK != null) callback_OK();} .create().show();
     }
 
     private fun setUrl() {
@@ -111,46 +139,58 @@ class MainActivity : AppCompatActivity() {
         }
         else
         {
-            //urlText.text = urlEditText.text
+            urlText.text = urlEditText.text
             setUrlButton.visibility = View.INVISIBLE
             urlEditText.visibility = View.INVISIBLE
             urlText.visibility = View.VISIBLE
-
-
-
-
-            val result = Fuel.get("https://api.ipify.org?format=json").responseString(){ request, response, result ->
-                //val res = result.get()
-                return@responseString
-            }
-
-
-
-            while(!result.isDone){
-                Log.i(TAG, "Sleep")
-                Thread.sleep(1000);
-
-            }
-            val respData = String( result.get().data);
-            //Log.i(TAG, String( result.get().data))
-            if(respData != "Success")
-                Toast.makeText(applicationContext,"URL test failed: " + respData,Toast.LENGTH_SHORT).show()
-
-            urlText.text = urlEditText.text;
-            //showMesage1("ERROR", String( result.get().data));
-
-
+            testUrlButton.visibility = View.VISIBLE
         }
     }
 
 
 
-    private fun editUrl()
-    {
+    private fun editUrl() {
+
         Log.i(TAG, "editUrl")
         urlEditText.setText(urlText.text)
         urlEditText.visibility = View.VISIBLE
         setUrlButton.visibility = View.VISIBLE
         urlText.visibility = View.INVISIBLE
+    }
+
+    private fun testUrl() {
+
+        val path = urlText.text.toString() //"https://api.ipify.org?format=json"
+        val result = Fuel.get(path).responseString(){ _, _, result ->
+            //val res = result.get()
+            return@responseString
+        }
+
+        while(!result.isDone){
+            Log.i(TAG, "Sleep")
+            Thread.sleep(1000);
+
+        }
+        val respData = String( result.get().data);
+
+        if(respData != "Success") {
+            showMesage("URL test failed", respData, null)
+            statusTextView.text = "URL test failed"
+            //Toast.makeText(applicationContext,"URL test failed: " + respData,Toast.LENGTH_SHORT).show()
+        }
+        else {
+            testUrlButton.visibility = View.INVISIBLE;
+            statusTextView.text = "Ready"
+        }
+    }
+}
+
+class Run {
+    companion object {
+        fun after(delay: Long, process: () -> Unit) {
+            Handler().postDelayed({
+                process()
+            }, delay)
+        }
     }
 }
