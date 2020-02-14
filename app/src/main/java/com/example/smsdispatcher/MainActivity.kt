@@ -17,6 +17,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.github.kittinunf.fuel.Fuel
 import kotlinx.android.synthetic.main.activity_main.*
+import com.github.kittinunf.fuel.httpGet
+import com.github.kittinunf.result.Result;
 
 
 class MainActivity : AppCompatActivity() {
@@ -44,7 +46,24 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "SMS From: "+smsFrom)
                 Log.i(TAG, "SMS Text: "+smsText)
                 val path: String =  urlText.text.toString()+"/?from="+smsFrom+"&msg="+smsText
-                Fuel.get(path)
+                Log.i(TAG, "Sending request: "+path)
+                statusTextView.text = "have SMS from "+smsFrom
+                Run.after(1000, {statusTextView.text = "Ready"})
+                //Fuel.get(path)
+
+                val result = Fuel.get(path).responseString(){ _, _, result ->
+                    //val res = result.get()
+                    return@responseString
+                }
+
+                while(!result.isDone){
+                    Log.i(TAG, "Sleep")
+                    Thread.sleep(1000);
+
+                }
+                val respData = String( result.get().data);
+
+                Log.i(TAG, "respData: "+respData)
             }
             else {
                 Toast.makeText(context, "SMS recaved but delivery is disabled", Toast.LENGTH_LONG).show();
@@ -202,12 +221,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun testUrl() {
 
-        val path = urlText.text.toString() //"https://api.ipify.org?format=json"
+        //val path = urlText.text.toString() //"https://api.ipify.org?format=json"
+        val path = "http://46.101.128.113/sms/?from=111&msg=test"
         val result = Fuel.get(path).responseString(){ _, _, result ->
+            when (result) {
+                is Result.Failure -> {
+                    val ex = result.getException()
+                    Log.i(TAG, ex.toString())
+                }
+                is Result.Success -> {
+                    val data = result.get()
+                    Log.i(TAG, data)
+                }
+            }
             //val res = result.get()
-            return@responseString
+            //return@responseString
         }
-
+/*
         while(!result.isDone){
             Log.i(TAG, "Sleep")
             Thread.sleep(1000);
@@ -220,11 +250,15 @@ class MainActivity : AppCompatActivity() {
             statusTextView.text = "URL test failed"
             //Toast.makeText(applicationContext,"URL test failed: " + respData,Toast.LENGTH_SHORT).show()
             Run.after(5000, {statusTextView.text = "Ready"})
+
+
         }
         else {
             testUrlButton.visibility = View.INVISIBLE;
             statusTextView.text = "Ready"
         }
+
+ */
     }
 }
 
