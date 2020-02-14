@@ -36,5 +36,6 @@ dependencies {
     implementation 'com.github.kittinunf.fuel:fuel:2.2.1' //Core package
     implementation 'com.github.kittinunf.fuel:fuel-gson:2.2.1' //Fuel Gson
     implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'androidx.cardview:cardview:1.0.0'//Gson
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'//Gson
 }

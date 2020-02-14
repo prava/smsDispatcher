@@ -3,8 +3,10 @@ package com.example.smsdispatcher
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.telephony.SmsMessage
-import android.widget.Toast
+import android.util.Log
+
 
 class SmsReceiver : BroadcastReceiver() {
 
@@ -13,10 +15,17 @@ class SmsReceiver : BroadcastReceiver() {
     val pdu_type = "pdus"
 
     override fun onReceive(context: Context, intent: Intent) {
+
+
+
         val bundle = intent.extras
         val msgs: Array<SmsMessage?>
         var strMessage = ""
         val format = bundle!!.getString("format")
+
+
+
+
 
         val pdus = bundle[pdu_type] as Array<ByteArray>?
         val isVersionM: Boolean = false;
@@ -34,6 +43,22 @@ class SmsReceiver : BroadcastReceiver() {
 
 
 
-        Toast.makeText(context, strMessage, Toast.LENGTH_LONG).show();
+        //Toast.makeText(context, strMessage, Toast.LENGTH_LONG).show();
+        Log.i(TAG, strMessage);
+
+
+//        context.sendBroadcast(Intent("SMS_RECAVED"));
+
+
+        val `in` = Intent("SMS_RECAVED")
+        val extras = Bundle()
+        extras.putString("SMSFrom", msgs[0]?.getOriginatingAddress())
+        extras.putString("SMSText", msgs[0]?.getMessageBody())
+        `in`.putExtras(extras)
+        context.sendBroadcast(`in`)
+
+
     }
+
+
 }

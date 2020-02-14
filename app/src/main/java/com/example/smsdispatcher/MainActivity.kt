@@ -1,6 +1,10 @@
 package com.example.smsdispatcher
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -17,53 +21,87 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    private val TAG = "smsdispatcherTag"
+    private val TAG = "smsdispatcherTAG"
     private val SMS_READ_PERMISSION_CODE = 100
     private val SMS_RECAVE_PERMISSION_CODE = 101
     private val INTERNET_PERMISSION_CODE = 102
     private val READ_STORAGE_PERMISSION_CODE = 103
     private val WRITE_STORAGE_PERMISSION_CODE = 104
 
+    var smsListenerEnabled: Boolean = false;
+    var smsDeliveryEnabled: Boolean = false;
+    var smsDispatcherEnabled: Boolean = false;
+
+    var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive( context: Context?, intent: Intent? ) {
+
+            if(!smsListenerEnabled)return;
+
+            if(smsDeliveryEnabled) {
+                val bundle = intent!!.extras;
+                val smsFrom = bundle!!.getString("SMSFrom")
+                val smsText = bundle!!.getString("SMSText")
+                Log.i(TAG, "SMS From: "+smsFrom)
+                Log.i(TAG, "SMS Text: "+smsText)
+                val path: String =  urlText.text.toString()+"/?from="+smsFrom+"&msg="+smsText
+                Fuel.get(path)
+            }
+            else {
+                Toast.makeText(context, "SMS recaved but delivery is disabled", Toast.LENGTH_LONG).show();
+            }
 
 
+        }
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(broadcastReceiver)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        registerReceiver(broadcastReceiver, IntentFilter("SMS_RECAVED"));
+
         makeRequest(Manifest.permission.RECEIVE_SMS, SMS_RECAVE_PERMISSION_CODE)
 
 // region SWITCHS
         smsListenerSwitch.setOnCheckedChangeListener { _, isChecked ->
+            smsListenerEnabled = isChecked;
             if (isChecked) {
-                Log.i(TAG,"smsListenerSwitch Switch on");
+                //Log.i(TAG,"smsListenerSwitch Switch on");
             } else {
-                Log.i(TAG,"smsListenerSwitch Switch off");
+                //Log.i(TAG,"smsListenerSwitch Switch off");
             }
         }
 
         smsDeliverySwitch.setOnCheckedChangeListener { _, isChecked ->
+            smsDeliveryEnabled = isChecked;
             if (isChecked) {
                 if(!smsListenerSwitch.isChecked) {
                     smsListenerSwitch.isChecked = true;
                 }
-                Log.i(TAG,"smsDeliverySwitch Switch on");
+                //Log.i(TAG,"smsDeliverySwitch Switch on");
             } else {
-                Log.i(TAG,"smsDeliverySwitch Switch off");
+                //Log.i(TAG,"smsDeliverySwitch Switch off");
             }
         }
 
         smsDispatcherSwitch.setOnCheckedChangeListener { _, isChecked ->
+            smsDispatcherEnabled = isChecked;
             if (isChecked) {
-                Log.i(TAG,"smsDispatcherSwitch Switch on");
+                //Log.i(TAG,"smsDispatcherSwitch Switch on");
             } else {
-                Log.i(TAG,"smsDispatcherSwitch Switch off");
+                //Log.i(TAG,"smsDispatcherSwitch Switch off");
             }
         }
 // endregion
-        setUrlButton.setOnClickListener {
 
+
+// region BUTTONS
+        setUrlButton.setOnClickListener {
 
 /*
             repeat(10) { i ->
@@ -83,6 +121,8 @@ class MainActivity : AppCompatActivity() {
                 showMesage("Error", "Enter dispatch URL", null)
                 return@setOnClickListener
             }
+            Run.after(10, {testUrl();})
+            /*
             Run.after(10, {
                 if(false) {
                     println("false")
@@ -91,11 +131,13 @@ class MainActivity : AppCompatActivity() {
                 }
             })
 
+             */
+
 
 
 
         }
-
+// endregion
         urlText.setOnClickListener {
             editUrl();
         }
@@ -177,6 +219,7 @@ class MainActivity : AppCompatActivity() {
             showMesage("URL test failed", respData, null)
             statusTextView.text = "URL test failed"
             //Toast.makeText(applicationContext,"URL test failed: " + respData,Toast.LENGTH_SHORT).show()
+            Run.after(5000, {statusTextView.text = "Ready"})
         }
         else {
             testUrlButton.visibility = View.INVISIBLE;
