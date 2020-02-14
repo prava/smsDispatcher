@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //makeRequest(Manifest.permission.RECEIVE_SMS, SMS_RECAVE_PERMISSION_CODE)
+        makeRequest(Manifest.permission.RECEIVE_SMS, SMS_RECAVE_PERMISSION_CODE)
 
 // region SWITCHS
         smsListenerSwitch.setOnCheckedChangeListener { _, isChecked ->
